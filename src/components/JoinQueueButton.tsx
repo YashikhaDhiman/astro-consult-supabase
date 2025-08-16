@@ -5,7 +5,15 @@ import { useEffect, useState } from "react"
 import supabase from "@/lib/supabaseClient"
 import Link from "next/link"
 
-export default function JoinQueueButton({ userId }: { userId: string }) {
+export default function JoinQueueButton({
+  userId,
+  onPrechat,
+  chatId,
+}: {
+  userId: string
+  onPrechat: (chatId: string) => void
+  chatId?: string
+}) {
   const router = useRouter()
   const [isInQueue, setIsInQueue] = useState(false)
   const [isFull, setIsFull] = useState(false)
@@ -40,48 +48,65 @@ export default function JoinQueueButton({ userId }: { userId: string }) {
     if (userId) checkQueueStatus()
   }, [userId])
 
-const handleJoin = async () => {
-  // Check if user already has an active chat
-  const { data: existingChats } = await supabase
-    .from('chats')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('status', 'active')
+  const handleJoin = async () => {
+    if (chatId) {
+      // mark chat as queued/active
+      const { error } = await supabase
+        .from("chats")
+        .update({ status: "queued" })
+        .eq("id", chatId)
 
-  if (existingChats && existingChats.length > 0) {
-    router.push(`/chat/${existingChats[0].id}`)
-    return
+      if (error) return alert(error.message)
+
+      window.location.href = `/chat/${chatId}`
+      return
+    }
+
+    // Check if user already has an active chat
+    const { data: existingChats } = await supabase
+      .from("chats")
+      .select("id, meta")
+      .eq("user_id", userId)
+      .eq("status", "active")
+
+    if (existingChats && existingChats.length > 0) {
+      const chat = existingChats[0]
+      if (!chat.meta) {
+        onPrechat(chat.id) // Trigger pre-chat form
+        return
+      }
+      router.push(`/chat/${chat.id}`)
+      return
+    }
+
+    // Fetch all active chats to assign the next priority number
+    const { data: activeChats, error } = await supabase
+      .from("chats")
+      .select("priority")
+      .eq("status", "active")
+
+    if (error) {
+      console.error("Error fetching active chats:", error)
+      return
+    }
+
+    const newPriority =
+      activeChats && activeChats.length > 0
+        ? Math.max(...activeChats.map((c: any) => c.priority || 0)) + 1
+        : 1
+
+    const { error: insertError } = await supabase.from("chats").insert({
+      user_id: userId,
+      priority: newPriority,
+      status: "active",
+    })
+
+    if (!insertError) {
+      router.push("/chat")
+    } else {
+      console.error("Error joining queue", insertError)
+    }
   }
-
-  // Fetch all active chats to assign the next priority number
-  const { data: activeChats, error } = await supabase
-    .from('chats')
-    .select('priority')
-    .eq('status', 'active')
-
-  if (error) {
-    console.error('Error fetching active chats:', error)
-    return
-  }
-
-  const newPriority =
-    activeChats && activeChats.length > 0
-      ? Math.max(...activeChats.map((c: any) => c.priority || 0)) + 1
-      : 1
-
-  const { error: insertError } = await supabase.from('chats').insert({
-    user_id: userId,
-    priority: newPriority,
-    status: 'active',
-  })
-
-  if (!insertError) {
-    router.push('/chat')
-  } else {
-    console.error('Error joining queue', insertError)
-  }
-}
-
 
   if (isInQueue) {
     return (
