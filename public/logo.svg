@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-labelledby="logoTitle">
+  <title id="logoTitle">Your Karmic Connection - Crystal Ball</title>
+  <defs>
+    <radialGradient id="glassGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fff7e6" stop-opacity="0.98" />
+      <stop offset="18%" stop-color="#fbd38d" stop-opacity="0.95" />
+      <stop offset="55%" stop-color="#d6b8ff" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.92" />
+    </radialGradient>
+
+    <linearGradient id="rim" x1="0" x2="1">
+      <stop offset="0" stop-color="#fbd38d" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#a78bfa" stop-opacity="0.18"/>
+    </linearGradient>
+
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- soft shadow under orb -->
+  <ellipse cx="60" cy="92" rx="28" ry="6" fill="rgba(0,0,0,0.22)" />
+
+  <!-- crystal orb -->
+  <g filter="url(#softShadow)">
+    <circle cx="60" cy="48" r="36" fill="url(#glassGrad)" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+    <circle cx="60" cy="48" r="36" fill="none" stroke="url(#rim)" stroke-width="2" opacity="0.6" />
+
+    <!-- inner nebula texture -->
+    <g opacity="0.14">
+      <path d="M44 42c6 4 12 2 18 6s10 10 6 16c-4 6-12 8-20 4s-16-14-8-26z" fill="#fff" />
+    </g>
+
+    <!-- sparkles (subtle lavender) -->
+    <g fill="#f6f0ff" opacity="0.96">
+      <circle cx="78" cy="30" r="1.8" />
+      <circle cx="70" cy="22" r="1.2" />
+      <circle cx="50" cy="34" r="1.5" />
+    </g>
+  </g>
+
+</svg>

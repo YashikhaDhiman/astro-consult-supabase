@@ -1,121 +1,107 @@
-'use client'
+/* eslint-disable */
+"use client"
 
-import { useEffect, useState } from 'react'
-import supabase from '@/lib/supabaseClient'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-
-const ASTROLOGER_EMAIL = 'devmishra30799@gmail.com'
+import supabase from '@/lib/supabaseClient'
 
 export default function Header() {
-  const [user, setUser] = useState<any>(null)
-  const [queueCount, setQueueCount] = useState<number>(0)
   const router = useRouter()
-
-  const fetchQueueCount = async () => {
-    const { count, error } = await supabase
-      .from('chats')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'active')
-
-    if (!error) {
-      setQueueCount(count || 0)
-    } else {
-      console.error('Error fetching queue count:', error)
-    }
-  }
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
-    const getUser = async () => {
+    let mounted = true
+
+    const loadUser = async () => {
       const { data } = await supabase.auth.getUser()
-      setUser(data?.user || null)
-      fetchQueueCount()
+      if (!mounted) return
+      setUser(data?.user ?? null)
+      if (data?.user?.id) {
+        try {
+          const { data: p } = await supabase.from('profiles').select('full_name').eq('id', data.user.id).single()
+          if (!mounted) return
+          setProfile(p)
+        } catch (e) {
+          if (!mounted) return
+          setProfile(null)
+        }
+      }
     }
 
-    getUser()
+    loadUser()
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null)
-      fetchQueueCount()
+    const { data: subData } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      if (session?.user?.id) {
+        ;(async () => {
+          try {
+            const { data: p } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single()
+            if (!mounted) return
+            setProfile(p)
+          } catch (e) {
+            if (!mounted) return
+            setProfile(null)
+          }
+        })()
+      } else {
+        setProfile(null)
+      }
     })
 
-    return () => {
-      listener?.subscription?.unsubscribe()
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchQueueCount()
-
-    const channel = supabase
-      .channel('realtime-queue')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'chats' },
-        () => {
-          fetchQueueCount()
-        }
-      )
-      .subscribe()
+    const subscription = (subData as any)?.subscription
 
     return () => {
-      supabase.removeChannel(channel)
+      mounted = false
+      subscription?.unsubscribe?.()
     }
   }, [])
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      alert('Logout failed: ' + error.message)
+      return
+    }
     router.push('/')
+    // Force reload to clear client state
+    setTimeout(() => {
+      window.location.reload()
+    }, 100)
   }
 
-  const isAstrologer = user?.email === ASTROLOGER_EMAIL
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email || 'User'
 
   return (
-    <header className="flex justify-between items-center p-4 bg-gray-900 text-white">
-      <Link href="/">
-        <h1 className="text-xl font-bold">Astro Consult ✨</h1>
-      </Link>
+    <header className="bg-gray-900 text-white">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-3">
+          <img src="/logo.svg" alt="Karmic logo" className="w-10 h-10 rounded-full" />
+          <div className="flex flex-col">
+            <span className="text-lg font-semibold karmic-gradient">Your Karmic Connection</span>
+            <span className="text-xs text-gray-300">A soul-led, free astrological space</span>
+          </div>
+        </Link>
 
-      <nav className="flex gap-4 items-center">
-        {/* Queue Count - blinking */}
-        <span className="bg-blue-700 px-3 py-1 rounded text-white animate-pulse font-mono">
-          Queue: {queueCount}
-        </span>
+        <nav className="flex items-center gap-4">
+          {user ? (
+            <>
+              <Link href="/mychats" className="text-sm text-gray-300 hover:underline">My Chats</Link>
+              <Link href="/queue" className="text-sm text-gray-300 hover:underline">Queue</Link>
 
-        {user && !isAstrologer && (
-          <Link href="/mychats" className="hover:underline">
-            My Chats
-          </Link>
-        )}
+              <Link href="/profile" className="text-sm text-gray-200 hover:underline">Hi, {displayName}</Link>
 
-        {user && isAstrologer && (
-          <Link href="/astro" className="hover:underline">
-            Inbox
-          </Link>
-        )}
-
-        {user ? (
-          <>
-            <span className="text-sm">Hi, {user.email}</span>
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-            >
-              Logout
-            </button>
-          </>
-        ) : (
-          <>
-            <Link href="/login" className="hover:underline">
-              Login
-            </Link>
-            <Link href="/signup" className="hover:underline">
-              Sign Up
-            </Link>
-          </>
-        )}
-      </nav>
+              <button onClick={handleLogout} className="karmic-btn karmic-btn--small">Logout</button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-sm text-gray-300 hover:underline">Login</Link>
+              <Link href="/signup" className="text-sm text-gray-300 hover:underline">Sign Up</Link>
+            </>
+          )}
+        </nav>
+      </div>
     </header>
   )
 }

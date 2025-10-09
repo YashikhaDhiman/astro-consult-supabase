@@ -8,13 +8,14 @@ export default function SignUpPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const { error } = await supabase.auth.signUp({
+    const { data: signData, error } = await supabase.auth.signUp({
       email,
       password
     });
@@ -22,7 +23,34 @@ export default function SignUpPage() {
     if (error) {
       setError(error.message);
     } else {
-      router.push('/queue'); // redirect after signup
+      // try to get the newly created user (some setups return user immediately)
+      const { data: userData } = await supabase.auth.getUser()
+      const uid = userData?.user?.id ?? signData?.user?.id ?? null
+
+      // If we have a uid, create/upsert a profile row (best-effort).
+      if (uid) {
+        try {
+          await supabase.from('profiles').upsert({ id: uid, full_name: fullName, updated_at: new Date() }, { onConflict: 'id' })
+        } catch (profileErr) {
+          // non-blocking: log and continue
+          console.warn('Failed to create profile at signup (profiles table may not exist):', profileErr)
+        }
+
+        // redirect to existing active chat if any
+        const { data: existingChats } = await supabase
+          .from('chats')
+          .select('id')
+          .eq('user_id', uid)
+          .eq('status', 'active')
+
+        if (existingChats && existingChats.length > 0) {
+          const { selectChat } = await import('@/lib/selectedChat')
+          selectChat(existingChats[0].id)
+          return
+        }
+      }
+
+      router.push('/queue')
     }
   };
 
@@ -41,6 +69,14 @@ export default function SignUpPage() {
             required
           />
           <input
+            type="text"
+            placeholder="Full name"
+            className="w-full p-2 rounded bg-gray-700 text-white"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+          />
+          <input
             type="password"
             placeholder="Password"
             className="w-full p-2 rounded bg-gray-700 text-white"
@@ -51,7 +87,7 @@ export default function SignUpPage() {
           {error && <p className="text-red-400 text-sm">{error}</p>}
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded"
+            className="w-full karmic-btn karmic-btn--large"
           >
             Sign Up
           </button>

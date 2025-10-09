@@ -3,13 +3,9 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --card-accent-1: #fbd38d; /* warm gold */
+  --card-accent-2: #a78bfa; /* violet */
+  --card-shimmer-alpha: 0.04;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +19,311 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Karmic site custom styles */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeUp {
+  animation: fadeInUp 700ms ease both;
+}
+
+@keyframes floatY {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
+.float-slow { animation: floatY 6s ease-in-out infinite; }
+
+.karmic-gradient {
+  background: linear-gradient(90deg, #fbd38d, #a78bfa 60%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.04);
+  backdrop-filter: blur(6px);
+}
+
+.accent-underline {
+  display: inline-block;
+  position: relative;
+}
+.accent-underline::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -6px;
+  height: 6px;
+  background: linear-gradient(90deg,#fbd38d,#a78bfa);
+  opacity: 0.25;
+  border-radius: 6px;
+}
+
+/* Flip card styles */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  perspective: 1200px;
+  min-height: 380px; /* increased vertical size for more readable cards */
+  position: relative; /* positioning context for inner faces */
+}
+.card-inner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 600ms cubic-bezier(.2,.9,.3,1);
+}
+/* Flip on hover (no click toggle) */
+.card:hover .card-inner,
+.card:focus-within .card-inner {
+  transform: rotateY(180deg);
+}
+.card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+.card-front {
+  /* subtle warm->violet tint on the front */
+  background: linear-gradient(180deg, rgba(167,139,250,0.03), rgba(251,211,141,0.02));
+}
+.card-back {
+  transform: rotateY(180deg);
+  /* slightly stronger tint on the back for readability */
+  background: linear-gradient(180deg, rgba(167,139,250,0.05), rgba(251,211,141,0.03));
+  display: flex;
+  flex-direction: column;
+  max-height: 520px;
+}
+
+/* Minimal custom scrollbar for card backs */
+.card-back-body {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(167,139,250,0.6) transparent;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding-top: 0.75rem;
+}
+.card-back-body::-webkit-scrollbar {
+  width: 6px;
+}
+.card-back-body::-webkit-scrollbar-track {
+  background: transparent; /* keep track invisible so thumb is subtle */
+}
+.card-back-body::-webkit-scrollbar-thumb {
+  /* camouflaged thumb: low-opacity, rounded, slightly inset */
+  background: rgba(2,6,23,0.08);
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.02);
+  min-height: 28px;
+}
+
+/* Dark theme: lighter, subtle thumb */
+@media (prefers-color-scheme: dark) {
+  .card-back-body::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+  .card-back-body { scrollbar-color: rgba(255,255,255,0.06) transparent; }
+}
+
+/* make the thumb slightly more visible on hover/focus for discoverability */
+.card-back-body:hover::-webkit-scrollbar-thumb,
+.card-back-body:focus-within::-webkit-scrollbar-thumb {
+  background: rgba(2,6,23,0.12);
+}
+
+.card-back-header {
+  flex: none;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.card-front { z-index: 2; }
+.card.is-flipped .card-front { z-index: 0; }
+.card.is-flipped .card-back { z-index: 2; }
+
+/* subtle pop effect to match site aesthetic */
+.card {
+  transition: transform 240ms cubic-bezier(.2,.9,.3,1), box-shadow 240ms ease;
+  will-change: transform;
+  cursor: pointer;
+}
+.card:hover {
+  transform: translateY(-6px) scale(1.01);
+}
+.hero-card {
+  transition: box-shadow 240ms ease, transform 240ms ease;
+  box-shadow: 0 4px 14px rgba(2,6,23,0.4);
+}
+.card:hover .hero-card {
+  box-shadow: 0 18px 40px rgba(2,6,23,0.55);
+}
+
+/* focus state mirrors hover for keyboard users */
+.card:focus-visible {
+  transform: translateY(-6px) scale(1.01);
+  outline: none;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .card, .card:hover, .card:focus-visible, .card-inner, .hero-card { transition: none !important; transform: none !important; }
+}
+
+/* Subtle shimmer behind the card on hover (minimal, non-intrusive) */
+.card {
+  --shimmer-color: linear-gradient(90deg, rgba(251,211,141,var(--card-shimmer-alpha)), rgba(167,139,250,var(--card-shimmer-alpha)));
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: 6px;
+  border-radius: 14px;
+  background: var(--shimmer-color);
+  filter: blur(12px);
+  opacity: 0;
+  z-index: 0; /* behind card faces */
+  transition: opacity 320ms ease, transform 320ms ease;
+  pointer-events: none;
+}
+.card:hover::before { opacity: 0.22; transform: scale(1.02); }
+/* Button styles for site-wide use ------------------------------------------------- */
+.karmic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(167,139,250,0.22), rgba(251,211,141,0.16));
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(167,139,250,0.08), 0 2px 6px rgba(0,0,0,0.06);
+  border: 1px solid rgba(255,255,255,0.03);
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+  cursor: pointer;
+}
+.karmic-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(167,139,250,0.12); }
+.karmic-btn:active { transform: translateY(-1px) scale(0.99); }
+.karmic-btn--large { padding: 0.75rem 1.25rem; border-radius: 14px; font-size: 1.03rem; }
+.karmic-btn--disabled, .karmic-btn[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+.karmic-btn--danger { background: linear-gradient(90deg,#ff7a7a,#ff4d4d); box-shadow: 0 8px 24px rgba(255,77,77,0.12); }
+.karmic-badge { display:inline-flex; align-items:center; gap:0.5rem; padding:0.25rem 0.6rem; border-radius:999px; background: linear-gradient(90deg,#7c3aed,#60a5fa); color:white; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace; font-weight:700; box-shadow: 0 6px 18px rgba(96,165,250,0.08); }
+
+/* end button styles -------------------------------------------------------------- */
+
+/* small emphasis on icon color by boosting contrast on hover */
+.card:hover .card-icon svg path, .card:hover .card-icon svg circle { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35)); }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .card::before { transition: none; opacity: 0; transform: none; }
+}
+
+/* focus and keyboard accessibility */
+.card-button { width: 100%; height: 100%; text-align: left; }
+.card:focus-visible { outline: 2px solid rgba(167,139,250,0.6); outline-offset: 4px; }
+
+.card .card-icon {
+  width: 36px; height: 36px; display: inline-block; margin-right: 8px;
+}
+
+/* Chat UI styles ------------------------------------------------------------ */
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(167,139,250,0.6) transparent;
+  overflow: auto;
+}
+.chat-scroll::-webkit-scrollbar { width: 10px; }
+.chat-scroll::-webkit-scrollbar-track { background: transparent; }
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(167,139,250,0.18), rgba(251,211,141,0.12));
+  border-radius: 999px;
+  border: 2px solid rgba(0,0,0,0.04);
+  min-height: 28px;
+}
+.chat-scroll:hover::-webkit-scrollbar-thumb,
+.chat-scroll:focus-within::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(167,139,250,0.26), rgba(251,211,141,0.16)); }
+
+.chat-bubble {
+  display: inline-block;
+  padding: 0.6rem 0.9rem;
+  border-radius: 14px;
+  /* Responsive width: never narrower than 200px, scale with viewport, capped at 90% or 1000px */
+  max-width: min(1000px, 90%);
+  width: auto;
+  /* Use clamp with viewport fallback for narrower screens */
+  max-width: clamp(200px, 75vw, 90%);
+  line-height: 1.3;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.12);
+  /* Preserve newlines and wrap long words when needed so multi-line messages
+    (like the onboarding details) display with line breaks. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.chat-bubble--me {
+  background: linear-gradient(90deg, rgba(167,139,250,0.95), rgba(251,211,141,0.9));
+  color: #071124; /* dark text on warm gradient */
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.chat-bubble--them {
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.86));
+  color: var(--foreground);
+  border: 1px solid rgba(2,6,23,0.04);
+}
+.chat-time { font-size: 0.72rem; color: rgba(255,255,255,0.55); margin-top: 0.25rem; }
+
+@media (prefers-color-scheme: dark) {
+  .chat-bubble--them { background: rgba(255,255,255,0.04); color: #e6e6e6; border: 1px solid rgba(255,255,255,0.03); }
+  .chat-time { color: rgba(255,255,255,0.36); }
+}
+
+/* Slightly increase bubble width on very small screens for better readability */
+@media (max-width: 420px) {
+  .chat-bubble { max-width: 98%; }
+}
+
+/* End chat styles --------------------------------------------------------- */
+.karmic-btn--end {
+  /* Use the site karmic gradient so the button matches site visuals,
+     with a subtle red tint to indicate destructive action. */
+  background: linear-gradient(90deg, rgba(167,139,250,0.22), rgba(251,211,141,0.16));
+  color: #ffffff; /* white text for End Chat */
+  border: 1px solid rgba(239,68,68,0.08); /* subtle red outline */
+  box-shadow: 0 8px 20px rgba(167,139,250,0.06), 0 6px 14px rgba(239,68,68,0.06);
+}
+.karmic-btn--end:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 34px rgba(167,139,250,0.12), 0 8px 20px rgba(239,68,68,0.08);
+}
+
+.no-border {
+  border: none !important;
+}
+
+.subtle-input {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.02);
 }
