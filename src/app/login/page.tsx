@@ -34,7 +34,19 @@ export default function LoginPage() {
       if (loggedInEmail === ASTROLOGER_EMAIL) {
         router.push('/astro');
       } else {
-        router.push('/queue');
+        // check if user already has an active chat
+        const { data: existingChats } = await supabase
+          .from('chats')
+          .select('id')
+          .eq('user_id', userData.user.id)
+          .eq('status', 'active')
+
+        if (existingChats && existingChats.length > 0) {
+          const { selectChat } = await import('@/lib/selectedChat')
+          selectChat(existingChats[0].id)
+        } else {
+          router.push('/queue')
+        }
       }
     }
   };
@@ -65,7 +77,7 @@ export default function LoginPage() {
           {error && <p className="text-red-400 text-sm">{error}</p>}
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded"
+            className="w-full karmic-btn karmic-btn--large"
           >
             Login
           </button>
