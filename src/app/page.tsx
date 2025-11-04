@@ -10,6 +10,10 @@ const ASTROLOGER_EMAIL = 'devmishra30799@gmail.com';
 
 export default function HomePage() {
   const [user, setUser] = useState<any>(null);
+  // track hover vs manual (click) flip states separately so hover can return when mouse leaves
+  const [hoverMap, setHoverMap] = useState<Record<string, boolean>>({});
+  const [manualMap, setManualMap] = useState<Record<string, boolean>>({});
+  const [isMobileView, setIsMobileView] = useState<boolean>(false)
   const mounted = useMounted();
   const [queueCount, setQueueCount] = useState(0);
   const router = useRouter();
@@ -22,6 +26,15 @@ export default function HomePage() {
 
   // run getUser; mount state is provided by useMounted()
   getUser();
+  // (we'll allow click-to-flip only on mobile viewports)
+
+  // detect mobile viewport (we'll allow click-to-flip only on mobile viewports)
+  const setMobile = () => setIsMobileView(window.innerWidth <= 768)
+  setMobile()
+  const onResize = () => setMobile()
+  window.addEventListener('resize', onResize)
+  // cleanup on unmount
+  return () => window.removeEventListener('resize', onResize)
   }, []);
 
   useEffect(() => {
@@ -155,8 +168,37 @@ export default function HomePage() {
         {!isAstrologer && (
           <div className="cards-grid mb-6">
             {cards.map((c) => {
+              const manual = manualMap[c.key]
+              const hover = hoverMap[c.key]
+              // Manual has precedence; otherwise follow hover
+              const isFlipped = manual === true ? true : manual === false ? false : !!hover
               return (
-                <article key={c.key} className={`card`} tabIndex={0}>
+                <article
+                  key={c.key}
+                  className={`card ${isFlipped ? 'is-flipped' : ''}`}
+                  tabIndex={0}
+                  onClick={() => {
+                    // Only treat click as manual toggle on mobile viewports. Desktop mouse clicks should not persist flips.
+                    if (!isMobileView) return
+                    setManualMap((s) => {
+                      const isOn = !!s[c.key]
+                      // toggle: if currently on, clear manualMap; else set this as the only manual flip
+                      return isOn ? {} : { [c.key]: true }
+                    })
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      // keyboard toggle should always work (accessibility)
+                      setManualMap((s) => {
+                        const isOn = !!s[c.key]
+                        return isOn ? {} : { [c.key]: true }
+                      })
+                    }
+                  }}
+                  onMouseEnter={() => setHoverMap((s) => ({ ...s, [c.key]: true }))}
+                  onMouseLeave={() => setHoverMap((s) => ({ ...s, [c.key]: false }))}
+                >
                   <div className="card-inner">
                     <div className="card-face card-front hero-card">
                         <div className="card-button">
@@ -175,6 +217,10 @@ export default function HomePage() {
                           <span className="card-icon" dangerouslySetInnerHTML={{ __html: c.icon }} />
                           <h3 className="text-xl font-semibold">{c.title}</h3>
                         </div>
+                        {/* Tap-to-close hint for mobile viewports when card is manually flipped */}
+                        {(isMobileView && manual) ? (
+                          <div className="tap-hint">Tap to close</div>
+                        ) : null}
                       </div>
                       <div className="card-back-body">
                         <p className="text-gray-200 whitespace-pre-wrap">{c.full}</p>

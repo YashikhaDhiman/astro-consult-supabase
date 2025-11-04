@@ -18,4 +18,6 @@ export function triggerQueueRefresh(count?: number) {
   })
 }
 
-export default { subscribeQueueRefresh, triggerQueueRefresh }
+const queueRefresh = { subscribeQueueRefresh, triggerQueueRefresh }
+
+export default queueRefresh
