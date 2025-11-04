@@ -5,11 +5,13 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import supabase from '@/lib/supabaseClient'
+import useUser from '@/hooks/useUser'
 
 export default function Header() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  const { queueCount } = useUser()
 
   useEffect(() => {
     let mounted = true
@@ -88,7 +90,10 @@ export default function Header() {
           {user ? (
             <>
               <Link href="/mychats" className="text-sm text-gray-300 hover:underline">My Chats</Link>
-              <Link href="/queue" className="text-sm text-gray-300 hover:underline">Queue</Link>
+              <div className="text-sm text-gray-300 flex items-center gap-2">
+                
+                <span className="karmic-badge" aria-hidden>Your Priority No. {typeof queueCount === 'number' ? queueCount : 0}</span>
+              </div>
 
               <Link href="/profile" className="text-sm text-gray-200 hover:underline">Hi, {displayName}</Link>
 
