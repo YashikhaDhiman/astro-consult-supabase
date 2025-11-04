@@ -59,7 +59,7 @@ export default function ProfilePage() {
         setTob(loaded.tob)
         setAvatarUrl(loaded.avatar_url)
         original.current = loaded
-      } catch (err) {
+      } catch {
         // profiles table might not exist yet; fall back to metadata
         const meta = data.user.user_metadata || {}
         const metaName = meta.full_name || meta.name || ''
