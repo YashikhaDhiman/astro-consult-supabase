@@ -85,10 +85,17 @@ body {
   height: 100%;
   transform-style: preserve-3d;
   transition: transform 600ms cubic-bezier(.2,.9,.3,1);
+  transform-origin: center;
+  will-change: transform;
 }
 /* Flip on hover (no click toggle) */
 .card:hover .card-inner,
 .card:focus-within .card-inner {
+  transform: rotateY(180deg);
+}
+
+/* Allow programmatic flip via .is-flipped for touch/click accessibility */
+.card.is-flipped .card-inner {
   transform: rotateY(180deg);
 }
 .card-face {
@@ -158,9 +165,7 @@ body {
   border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 
-.card-front { z-index: 2; }
-.card.is-flipped .card-front { z-index: 0; }
-.card.is-flipped .card-back { z-index: 2; }
+/* layering of front/back is managed by backface-visibility and transform; no z-index swaps */
 
 /* subtle pop effect to match site aesthetic */
 .card {
@@ -185,9 +190,9 @@ body {
   outline: none;
 }
 
-/* Respect reduced motion preferences */
+/* Respect reduced motion preferences: disable transitions but keep transforms so card faces remain positioned correctly */
 @media (prefers-reduced-motion: reduce) {
-  .card, .card:hover, .card:focus-visible, .card-inner, .hero-card { transition: none !important; transform: none !important; }
+  .card, .card:hover, .card:focus-visible, .card-inner, .hero-card { transition: none !important; }
 }
 
 /* Subtle shimmer behind the card on hover (minimal, non-intrusive) */
@@ -247,6 +252,24 @@ body {
 
 .card .card-icon {
   width: 36px; height: 36px; display: inline-block; margin-right: 8px;
+}
+
+/* Tap hint shown on touch devices when card is manually flipped */
+.tap-hint {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  background: rgba(0,0,0,0.45);
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1;
+  display: none;
+  z-index: 10;
+}
+@media (hover: none) {
+  .tap-hint { display: none; }
 }
 
 /* Chat UI styles ------------------------------------------------------------ */

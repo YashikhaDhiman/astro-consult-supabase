@@ -14,7 +14,7 @@ function initialsFrom(s: string | null | undefined, fallback = '') {
 
 export default function ProfilePage() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{ id: string; email?: string; user_metadata?: Record<string, unknown> } | null>(null)
   const [loading, setLoading] = useState(true)
 
   // editable fields
@@ -28,7 +28,7 @@ export default function ProfilePage() {
   const [errors, setErrors] = useState<string | null>(null)
 
   // keep original values so Cancel can restore
-  const original = useRef<any>(null)
+  const original = useRef<{ full_name?: string; place_of_birth?: string; dob?: string; tob?: string; avatar_url?: string | null } | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -59,7 +59,7 @@ export default function ProfilePage() {
         setTob(loaded.tob)
         setAvatarUrl(loaded.avatar_url)
         original.current = loaded
-      } catch (e) {
+      } catch {
         // profiles table might not exist yet; fall back to metadata
         const meta = data.user.user_metadata || {}
         const metaName = meta.full_name || meta.name || ''
@@ -121,8 +121,8 @@ export default function ProfilePage() {
         setMessage(`Avatar upload failed: ${uploadError.message}`)
         return null
       }
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
-      const publicUrl = (urlData as any)?.publicUrl || null
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path) as { data?: { publicUrl?: string } }
+      const publicUrl = urlData?.publicUrl ?? null
       return publicUrl
     } catch (err) {
       console.warn('Unexpected avatar upload error', err)
@@ -139,7 +139,7 @@ export default function ProfilePage() {
     if (!validate()) return
 
     try {
-      const payload: any = {
+      const payload: { id: string; full_name: string; place_of_birth: string; dob: string; tob: string; updated_at: Date; avatar_url?: string | null } = {
         id: user.id,
         full_name: fullName,
         place_of_birth: placeOfBirth,
@@ -149,7 +149,7 @@ export default function ProfilePage() {
       }
       if (avatarUrl) payload.avatar_url = avatarUrl
 
-      const { data, error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
+      const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
       if (error) {
         console.warn('Supabase upsert error:', error)
         setMessage(`Failed to save profile: ${error.message}`)
